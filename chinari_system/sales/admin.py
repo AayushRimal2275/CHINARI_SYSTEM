@@ -3,5 +3,24 @@ from .models import Sale
 
 @admin.register(Sale)
 class SaleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'vendor', 'total_amount', 'amount_paid', 'created_at')
-    readonly_fields = ('created_at',)
+    list_display = (
+        'vendor',
+        'product',
+        'quantity',
+        'price_per_unit',
+        'total_amount',
+        'created_at',
+    )
+
+    readonly_fields = (
+        'vendor',
+        'product',
+        'quantity',
+        'price_per_unit',
+        'total_amount',
+        'created_at',
+    )
+    def has_change_permission(self, request, obj = None):
+        return False
+    def has_delete_permission(self, request, obj = None):
+        return False

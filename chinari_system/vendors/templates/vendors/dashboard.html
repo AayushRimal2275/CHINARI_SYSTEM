@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard – Chinari Chiya</title>
+    <style>
+        body { font-family: Arial; margin: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ccc; }
+        th { background: #f0f0f0; }
+        .red { color: red; font-weight: bold; }
+        .green { color: green; font-weight: bold; }
+        a { text-decoration: none; color: black; }
+    </style>
+</head>
+<body>
+
+<h2>📊 Vendor Dashboard</h2>
+
+<h3>
+    Total Outstanding Amount:
+    <span class="red">{{ total_due }}</span>
+</h3>
+
+<table>
+    <tr>
+        <th>Vendor</th>
+        <th>Due Amount</th>
+        <th>Status</th>
+    </tr>
+
+    {% for item in vendor_data %}
+    <tr>
+        <td>
+            <a href="{% url 'vendor_statement' item.vendor.id %}">
+                {{ item.vendor.name }}
+            </a>
+        </td>
+
+        <td>
+            {% if item.due > 0 %}
+                <span class="red">{{ item.due }}</span>
+            {% else %}
+                <span class="green">0</span>
+            {% endif %}
+        </td>
+
+        <td>
+            {% if item.due > 0 %}
+                🔴 Pending
+            {% else %}
+                🟢 Cleared
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>
