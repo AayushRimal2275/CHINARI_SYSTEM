@@ -1,0 +1,51 @@
+{%load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Chinari System{% endblock %}</title>
+    <link href="{% static 'css/dist/styles.css' %}" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+
+    <!-- Header / Page Title -->
+    <header class="bg-white p-4 shadow-md sticky top-0 z-10">
+        <h1 class="text-lg font-bold text-gray-800">{% block header %}Dashboard{% endblock %}</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-4 overflow-y-auto">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bg-white shadow-md flex justify-around py-2 fixed bottom-0 w-full">
+        <a href="{% url 'dashboard' %}" class="flex flex-col items-center text-gray-700">
+            <span>🏠</span>
+            <span class="text-xs">Dashboard</span>
+        </a>
+        <a href="{% url 'sales_list' %}" class="flex flex-col items-center text-gray-700">
+            <span>🛒</span>
+            <span class="text-xs">Sales</span>
+        </a>
+        <a href="{% url 'payments_list' %}" class="flex flex-col items-center text-gray-700">
+            <span>💵</span>
+            <span class="text-xs">Payments</span>
+        </a>
+        <a href="{% url 'inventory_list' %}" class="flex flex-col items-center text-gray-700">
+            <span>📦</span>
+            <span class="text-xs">Inventory</span>
+        </a>
+        <a href="{% url 'products_list' %}" class="flex flex-col items-center text-gray-700">
+            <span>📃</span>
+            <span class="text-xs">Products</span>
+        </a>
+        <a href="{% url 'vendors_list' %}" class="flex flex-col items-center text-gray-700">
+            <span>🧑‍💼</span>
+            <span class="text-xs">Vendors</span>
+        </a>
+    </nav>
+
+</body>
+</html>

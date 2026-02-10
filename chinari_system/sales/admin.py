@@ -12,14 +12,14 @@ class SaleAdmin(admin.ModelAdmin):
         'created_at',
     )
 
-    readonly_fields = (
-        'vendor',
-        'product',
-        'quantity',
-        'price_per_unit',
-        'total_amount',
-        'created_at',
-    )
+    # readonly_fields = (
+    #     'vendor',
+    #     'product',
+    #     'quantity',
+    #     'price_per_unit',
+    #     'total_amount',
+    #     'created_at',
+    # )
     def has_change_permission(self, request, obj = None):
         return False
     def has_delete_permission(self, request, obj = None):

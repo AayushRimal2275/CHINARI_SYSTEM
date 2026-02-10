@@ -16,8 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from vendors import views as vendor_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("",include("vendors.urls")),
+    path('', vendor_views.dashboard, name='dashboard'),  # default landing page
+    path('vendors/', include('vendors.urls')),
+    path('sales/', include('sales.urls')),
+    path('payments/', include('payments.urls')),
+    path('inventory/', include('inventory.urls')),
+    path('products/', include('products.urls')),
 ]
+

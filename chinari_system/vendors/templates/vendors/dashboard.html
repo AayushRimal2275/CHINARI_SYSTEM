@@ -1,59 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Dashboard – Chinari Chiya</title>
-    <style>
-        body { font-family: Arial; margin: 20px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #ccc; }
-        th { background: #f0f0f0; }
-        .red { color: red; font-weight: bold; }
-        .green { color: green; font-weight: bold; }
-        a { text-decoration: none; color: black; }
-    </style>
-</head>
-<body>
+{% extends "theme/base.html" %}
+{% block title %}Dashboard{% endblock %}
 
-<h2>📊 Vendor Dashboard</h2>
+{% block content %}
+<h1 class="text-xl font-bold mb-4">Dashboard</h1>
 
-<h3>
-    Total Outstanding Amount:
-    <span class="red">{{ total_due }}</span>
-</h3>
+<div class="space-y-4 text-black">
 
-<table>
-    <tr>
-        <th>Vendor</th>
-        <th>Due Amount</th>
-        <th>Status</th>
-    </tr>
-
-    {% for item in vendor_data %}
-    <tr>
-        <td>
-            <a href="{% url 'vendor_statement' item.vendor.id %}">
-                {{ item.vendor.name }}
-            </a>
-        </td>
-
-        <td>
-            {% if item.due > 0 %}
-                <span class="red">{{ item.due }}</span>
-            {% else %}
-                <span class="green">0</span>
-            {% endif %}
-        </td>
-
-        <td>
-            {% if item.due > 0 %}
-                🔴 Pending
-            {% else %}
-                🟢 Cleared
-            {% endif %}
-        </td>
-    </tr>
+  <div class="p-4 bg-white rounded shadow">
+    <h2 class="font-semibold mb-2">Total Due: ₹{{ total_due }}</h2>
+    {% for vendor in vendor_data %}
+      <div class="flex justify-between py-1 border-b">
+        <span>{{ vendor.vendor.name }}</span>
+        <span class="font-semibold">₹{{ vendor.due }}</span>
+      </div>
     {% endfor %}
-</table>
+  </div>
 
-</body>
-</html>
+</div>
+{% endblock %}
