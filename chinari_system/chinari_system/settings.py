@@ -21,7 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-ucxy^9dlksmz5g(rgtwsftumwmiwfu(pxgsro*tfpqo(r+v_47')
+default_secret_key = 'django-insecure-ucxy^9dlksmz5g(rgtwsftumwmiwfu(pxgsro*tfpqo(r+v_47'
+SECRET_KEY = os.getenv('SECRET_KEY')
+if SECRET_KEY is None:
+    if 'VERCEL' in os.environ:
+        raise RuntimeError('SECRET_KEY must be set when running on Vercel.')
+    SECRET_KEY = default_secret_key
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if 'VERCEL' in os.environ:
@@ -34,10 +39,13 @@ vercel_url = os.getenv('VERCEL_URL')
 if vercel_url:
     ALLOWED_HOSTS.append(vercel_url)
 else:
-    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
+    if 'VERCEL' not in os.environ:
+        ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
+if not ALLOWED_HOSTS and 'VERCEL' in os.environ:
+    raise RuntimeError('ALLOWED_HOSTS must be set when running on Vercel.')
 
 CSRF_TRUSTED_ORIGINS = []
 if vercel_url:

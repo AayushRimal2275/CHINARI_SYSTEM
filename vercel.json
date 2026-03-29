@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "python chinari_system/manage.py collectstatic --noinput",
+  "buildCommand": "python -m pip install -r requirements.txt && python chinari_system/manage.py collectstatic --noinput",
   "builds": [
     {
       "src": "api/index.py",
