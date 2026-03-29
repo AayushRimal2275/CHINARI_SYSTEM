@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -34,18 +35,21 @@ if SECRET_KEY is None:
             'SECRET_KEY environment variable must be set when running on Vercel. '
             'Please configure it in your Vercel project settings.'
         )
-    if DEBUG:
-        SECRET_KEY = 'dev-secret-key-change-me'
+    if DEBUG and os.getenv('DJANGO_ALLOW_INSECURE_SECRET') == '1':
+        SECRET_KEY = secrets.token_urlsafe(50)
     else:
-        raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG is false.')
+        raise RuntimeError(
+            'SECRET_KEY environment variable must be set. For local development, set '
+            'DJANGO_ALLOW_INSECURE_SECRET=1 to generate a temporary key.'
+        )
 
 ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
 if vercel_url:
     vercel_url = vercel_url.strip()
     if vercel_url:
-        if vercel_url.startswith('http://'):
-            raise RuntimeError('VERCEL_URL must use https when running on Vercel.')
+        if vercel_url.startswith('http://') or vercel_url.startswith('https://'):
+            raise RuntimeError('VERCEL_URL should not include a protocol scheme.')
         ALLOWED_HOSTS.append(vercel_url)
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
