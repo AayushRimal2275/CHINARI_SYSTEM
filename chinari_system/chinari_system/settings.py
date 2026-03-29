@@ -64,8 +64,7 @@ if not ALLOWED_HOSTS:
 
 CSRF_TRUSTED_ORIGINS = []
 if vercel_url:
-    csrf_origin = vercel_url if vercel_url.startswith('https://') else f'https://{vercel_url}'
-    CSRF_TRUSTED_ORIGINS.append(csrf_origin)
+    CSRF_TRUSTED_ORIGINS.append(f'https://{vercel_url}')
 extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
 if extra_csrf:
     extra_csrf_origins = [origin.strip() for origin in extra_csrf.split(',')]
