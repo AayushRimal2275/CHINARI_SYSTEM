@@ -31,28 +31,31 @@ if SECRET_KEY is None:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 
-ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
+extra_hosts = os.getenv('ALLOWED_HOSTS')
+if 'VERCEL' in os.environ:
+    ALLOWED_HOSTS = []
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 if vercel_url:
     vercel_url = vercel_url.strip()
     if vercel_url:
         if vercel_url.startswith('http://') or vercel_url.startswith('https://'):
             raise RuntimeError('VERCEL_URL should not include a protocol scheme.')
         ALLOWED_HOSTS.append(vercel_url)
-extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
-if not ALLOWED_HOSTS:
-    if 'VERCEL' in os.environ:
-        raise RuntimeError(
-            'ALLOWED_HOSTS is empty. Please set VERCEL_URL or ALLOWED_HOSTS environment '
-            'variable when running on Vercel.'
-        )
-    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
+if not ALLOWED_HOSTS and 'VERCEL' in os.environ:
+    raise RuntimeError(
+        'ALLOWED_HOSTS is empty. Please set VERCEL_URL or ALLOWED_HOSTS environment '
+        'variable when running on Vercel.'
+    )
 
 CSRF_TRUSTED_ORIGINS = []
 if vercel_url:
     CSRF_TRUSTED_ORIGINS.append(f'https://{vercel_url}')
+    if DEBUG:
+        CSRF_TRUSTED_ORIGINS.append(f'http://{vercel_url}')
 extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
 if extra_csrf:
     CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
