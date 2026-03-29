@@ -1,3 +1,4 @@
 Django==4.2.29
 django-jazzmin==2.6.0
 django-tailwind==3.8.0
+python-dotenv==0.21.0
