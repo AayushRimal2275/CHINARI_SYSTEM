@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,7 +29,10 @@ if SECRET_KEY is None:
             'SECRET_KEY environment variable must be set when running on Vercel. '
             'Please configure it in your Vercel project settings.'
         )
-    SECRET_KEY = 'unsafe-dev-secret-key'
+    if DEBUG:
+        SECRET_KEY = secrets.token_urlsafe(50)
+    else:
+        raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG is false.')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if 'VERCEL' in os.environ:
@@ -43,6 +47,7 @@ if vercel_url:
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
+ALLOWED_HOSTS = [host for host in ALLOWED_HOSTS if host]
 if not ALLOWED_HOSTS:
     if 'VERCEL' in os.environ:
         raise RuntimeError(
