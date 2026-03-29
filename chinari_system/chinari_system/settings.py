@@ -22,6 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# SECURITY WARNING: don't run with debug turned on in production!
+if 'VERCEL' in os.environ:
+    DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
+else:
+    DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
+
 SECRET_KEY = os.getenv('SECRET_KEY')
 if SECRET_KEY is None:
     if 'VERCEL' in os.environ:
@@ -34,20 +40,15 @@ if SECRET_KEY is None:
     else:
         raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG is false.')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-if 'VERCEL' in os.environ:
-    DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
-else:
-    DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
-
 ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
 if vercel_url:
-    ALLOWED_HOSTS.append(vercel_url)
+    vercel_url = vercel_url.strip()
+    if vercel_url:
+        ALLOWED_HOSTS.append(vercel_url)
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
-ALLOWED_HOSTS = [host for host in ALLOWED_HOSTS if host]
 if not ALLOWED_HOSTS:
     if 'VERCEL' in os.environ:
         raise RuntimeError(
@@ -62,7 +63,8 @@ if vercel_url:
     CSRF_TRUSTED_ORIGINS.append(csrf_origin)
 extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
 if extra_csrf:
-    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
+    extra_csrf_origins = [origin.strip() for origin in extra_csrf.split(',')]
+    CSRF_TRUSTED_ORIGINS.extend([origin for origin in extra_csrf_origins if origin])
 
 
 # Application definition
