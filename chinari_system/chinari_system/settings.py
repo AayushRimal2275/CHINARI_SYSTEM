@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-import secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,26 +21,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.getenv('SECRET_KEY')
+if SECRET_KEY is None:
+    raise RuntimeError(
+        'SECRET_KEY environment variable must be set. Please configure it in your '
+        'environment or Vercel project settings.'
+    )
+
 # SECURITY WARNING: don't run with debug turned on in production!
 if 'VERCEL' in os.environ:
     DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 else:
     DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
-
-SECRET_KEY = os.getenv('SECRET_KEY')
-if SECRET_KEY is None:
-    if 'VERCEL' in os.environ:
-        raise RuntimeError(
-            'SECRET_KEY environment variable must be set when running on Vercel. '
-            'Please configure it in your Vercel project settings.'
-        )
-    if DEBUG and os.getenv('DJANGO_ALLOW_INSECURE_SECRET') == '1':
-        SECRET_KEY = secrets.token_urlsafe(50)
-    else:
-        raise RuntimeError(
-            'SECRET_KEY environment variable must be set. For local development, set '
-            'DJANGO_ALLOW_INSECURE_SECRET=1 to generate a temporary key.'
-        )
 
 ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
