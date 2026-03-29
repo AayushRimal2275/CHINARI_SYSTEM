@@ -10,58 +10,62 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
 import os
-from dotenv import load_dotenv
+from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-load_dotenv(BASE_DIR / ".env")
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+# Only load .env if it exists (for local development)
+dotenv_path = BASE_DIR / ".env"
+if dotenv_path.exists():
+    from dotenv import load_dotenv
+    load_dotenv(dotenv_path)
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.getenv('SECRET_KEY')
-if SECRET_KEY is None:
+# SECRET_KEY must exist either in .env (local) or Vercel env
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
     raise RuntimeError(
-        'SECRET_KEY environment variable must be set. Please configure it in your '
-        'environment or Vercel project settings.'
+        "SECRET_KEY environment variable must be set. "
+        "Please configure it in your environment or Vercel project settings."
     )
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
+# Debug
+DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
-vercel_url = os.getenv('VERCEL_URL')
-extra_hosts = os.getenv('ALLOWED_HOSTS')
+# Hosts
+vercel_url = os.getenv("VERCEL_URL")
+extra_hosts = os.getenv("ALLOWED_HOSTS")
+
 if 'VERCEL' in os.environ:
     ALLOWED_HOSTS = []
 else:
     ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+
 if vercel_url:
     vercel_url = vercel_url.strip()
-    if vercel_url:
-        if vercel_url.startswith('http://') or vercel_url.startswith('https://'):
-            raise RuntimeError('VERCEL_URL should not include a protocol scheme.')
-        ALLOWED_HOSTS.append(vercel_url)
+    if vercel_url.startswith('http://') or vercel_url.startswith('https://'):
+        raise RuntimeError('VERCEL_URL should not include a protocol scheme.')
+    ALLOWED_HOSTS.append(vercel_url)
+
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
+
 if not ALLOWED_HOSTS and 'VERCEL' in os.environ:
     raise RuntimeError(
         'ALLOWED_HOSTS is empty. Please set VERCEL_URL or ALLOWED_HOSTS environment '
         'variable when running on Vercel.'
     )
 
+# CSRF Trusted Origins
 CSRF_TRUSTED_ORIGINS = []
 if vercel_url:
     CSRF_TRUSTED_ORIGINS.append(f'https://{vercel_url}')
     if DEBUG:
         CSRF_TRUSTED_ORIGINS.append(f'http://{vercel_url}')
-extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
+
+extra_csrf = os.getenv("CSRF_TRUSTED_ORIGINS")
 if extra_csrf:
     CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
-
-
 # Application definition
 
 INSTALLED_APPS = [
