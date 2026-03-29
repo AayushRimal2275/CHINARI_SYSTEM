@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +21,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ucxy^9dlksmz5g(rgtwsftumwmiwfu(pxgsro*tfpqo(r+v_47'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-ucxy^9dlksmz5g(rgtwsftumwmiwfu(pxgsro*tfpqo(r+v_47')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+debug_env = os.getenv('DJANGO_DEBUG')
+if debug_env is None:
+    DEBUG = 'VERCEL' not in os.environ
+else:
+    DEBUG = debug_env == '1'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+vercel_url = os.getenv('VERCEL_URL')
+if vercel_url:
+    ALLOWED_HOSTS.append(vercel_url)
+extra_hosts = os.getenv('ALLOWED_HOSTS')
+if extra_hosts:
+    ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
+
+CSRF_TRUSTED_ORIGINS = []
+if vercel_url:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{vercel_url}')
+extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
+if extra_csrf:
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
 
 
 # Application definition
@@ -131,7 +149,7 @@ STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "theme" / "static",
 ]
+STATIC_ROOT = BASE_DIR / "static"
 # Tailwind settings
 TAILWIND_APP_NAME = 'theme'
 INTERNAL_IPS = ['127.0.0.1']  # Required for django-browser-reload if used
-
