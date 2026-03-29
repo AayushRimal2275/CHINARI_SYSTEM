@@ -7,6 +7,6 @@ sys.path.insert(0, str(BASE_DIR / "chinari_system"))
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "chinari_system.settings")
 
-from django.core.wsgi import get_wsgi_application  # noqa: E402
+from django.core.wsgi import get_wsgi_application
 
 app = get_wsgi_application()
