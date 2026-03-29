@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-import secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -36,7 +35,7 @@ if SECRET_KEY is None:
             'Please configure it in your Vercel project settings.'
         )
     if DEBUG:
-        SECRET_KEY = secrets.token_urlsafe(50)
+        SECRET_KEY = 'dev-secret-key-change-me'
     else:
         raise RuntimeError('SECRET_KEY environment variable must be set when DEBUG is false.')
 
@@ -45,6 +44,8 @@ vercel_url = os.getenv('VERCEL_URL')
 if vercel_url:
     vercel_url = vercel_url.strip()
     if vercel_url:
+        if vercel_url.startswith('http://'):
+            raise RuntimeError('VERCEL_URL must use https when running on Vercel.')
         ALLOWED_HOSTS.append(vercel_url)
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
@@ -59,7 +60,7 @@ if not ALLOWED_HOSTS:
 
 CSRF_TRUSTED_ORIGINS = []
 if vercel_url:
-    csrf_origin = vercel_url if vercel_url.startswith('http') else f'https://{vercel_url}'
+    csrf_origin = vercel_url if vercel_url.startswith('https://') else f'https://{vercel_url}'
     CSRF_TRUSTED_ORIGINS.append(csrf_origin)
 extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
 if extra_csrf:
