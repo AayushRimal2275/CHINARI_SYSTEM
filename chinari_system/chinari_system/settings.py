@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-import secrets
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +28,7 @@ if SECRET_KEY is None:
             'SECRET_KEY environment variable must be set when running on Vercel. '
             'Please configure it in your Vercel project settings.'
         )
-    SECRET_KEY = secrets.token_urlsafe(50)
+    SECRET_KEY = 'unsafe-dev-secret-key'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 if 'VERCEL' in os.environ:
@@ -41,21 +40,21 @@ ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
 if vercel_url:
     ALLOWED_HOSTS.append(vercel_url)
-else:
-    if 'VERCEL' not in os.environ:
-        ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
-if not ALLOWED_HOSTS and 'VERCEL' in os.environ:
-    raise RuntimeError(
-        'ALLOWED_HOSTS is empty. Please set VERCEL_URL or ALLOWED_HOSTS environment '
-        'variable when running on Vercel.'
-    )
+if not ALLOWED_HOSTS:
+    if 'VERCEL' in os.environ:
+        raise RuntimeError(
+            'ALLOWED_HOSTS is empty. Please set VERCEL_URL or ALLOWED_HOSTS environment '
+            'variable when running on Vercel.'
+        )
+    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 
 CSRF_TRUSTED_ORIGINS = []
 if vercel_url:
-    CSRF_TRUSTED_ORIGINS.append(f'https://{vercel_url}')
+    csrf_origin = vercel_url if vercel_url.startswith('http') else f'https://{vercel_url}'
+    CSRF_TRUSTED_ORIGINS.append(csrf_origin)
 extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
 if extra_csrf:
     CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
