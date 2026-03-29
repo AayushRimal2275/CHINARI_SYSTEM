@@ -24,16 +24,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-ucxy^9dlksmz5g(rgtwsftumwmiwfu(pxgsro*tfpqo(r+v_47')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-debug_env = os.getenv('DJANGO_DEBUG')
-if debug_env is None:
-    DEBUG = 'VERCEL' not in os.environ
+if 'VERCEL' in os.environ:
+    DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 else:
-    DEBUG = debug_env == '1'
+    DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
 if vercel_url:
     ALLOWED_HOSTS.append(vercel_url)
+else:
+    ALLOWED_HOSTS.extend(['localhost', '127.0.0.1'])
 extra_hosts = os.getenv('ALLOWED_HOSTS')
 if extra_hosts:
     ALLOWED_HOSTS.extend([host.strip() for host in extra_hosts.split(',') if host.strip()])
