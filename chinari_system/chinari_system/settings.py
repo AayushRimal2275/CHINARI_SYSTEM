@@ -29,10 +29,7 @@ if SECRET_KEY is None:
     )
 
 # SECURITY WARNING: don't run with debug turned on in production!
-if 'VERCEL' in os.environ:
-    DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
-else:
-    DEBUG = os.getenv('DJANGO_DEBUG', '1') == '1'
+DEBUG = os.getenv('DJANGO_DEBUG', '0') == '1'
 
 ALLOWED_HOSTS = []
 vercel_url = os.getenv('VERCEL_URL')
@@ -58,8 +55,7 @@ if vercel_url:
     CSRF_TRUSTED_ORIGINS.append(f'https://{vercel_url}')
 extra_csrf = os.getenv('CSRF_TRUSTED_ORIGINS')
 if extra_csrf:
-    extra_csrf_origins = [origin.strip() for origin in extra_csrf.split(',')]
-    CSRF_TRUSTED_ORIGINS.extend([origin for origin in extra_csrf_origins if origin])
+    CSRF_TRUSTED_ORIGINS.extend([origin.strip() for origin in extra_csrf.split(',') if origin.strip()])
 
 
 # Application definition
