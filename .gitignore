@@ -12,6 +12,20 @@ db.sqlite3
 *.log
 .env
 
+# Monorepo dependencies
+backend/vendor/
+backend/node_modules/
+frontend/node_modules/
+
+# Laravel runtime
+backend/storage/*.key
+backend/storage/logs/*.log
+backend/.env
+backend/database/*.sqlite
+
+# Frontend env
+frontend/.env
+
 # OS
 .DS_Store
 Thumbs.db
