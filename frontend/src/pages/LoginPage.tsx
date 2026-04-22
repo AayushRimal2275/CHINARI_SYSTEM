@@ -1,9 +1,9 @@
-import { FormEvent, useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { useAuth } from '@/features/auth/AuthContext'
+import { useAuth } from '@/features/auth/useAuth'
 
 export function LoginPage() {
   const navigate = useNavigate()

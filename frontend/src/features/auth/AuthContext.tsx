@@ -1,20 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { api, setApiToken } from '@/lib/api'
-
-type User = {
-  id: number
-  name: string
-  email: string
-}
-
-type AuthContextValue = {
-  token: string | null
-  user: User | null
-  login: (email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-}
-
-const AuthContext = createContext<AuthContextValue | null>(null)
+import { AuthContext, type AuthContextValue, type User } from './context'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('chinari_token'))
@@ -53,12 +39,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth must be used inside AuthProvider')
-  }
-  return context
 }

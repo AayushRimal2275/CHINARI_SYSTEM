@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
-import { useAuth } from '@/features/auth/AuthContext'
+import { useAuth } from '@/features/auth/useAuth'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { LoginPage } from '@/pages/LoginPage'
 import { PlaceholderPage } from '@/pages/PlaceholderPage'
