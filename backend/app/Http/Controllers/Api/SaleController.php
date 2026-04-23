@@ -8,6 +8,7 @@ use App\Models\Inventory;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\StockMovement;
+use App\Models\Vendor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,12 @@ class SaleController extends ApiController
     {
         $sales = Sale::query()
             ->with('vendor')
+            ->when($request->filled('from_date'), function ($query) use ($request): void {
+                $query->whereDate('sale_date', '>=', $request->input('from_date'));
+            })
+            ->when($request->filled('to_date'), function ($query) use ($request): void {
+                $query->whereDate('sale_date', '<=', $request->input('to_date'));
+            })
             ->latest('sale_date')
             ->paginate($request->integer('per_page', 15));
 
@@ -42,11 +49,14 @@ class SaleController extends ApiController
     {
         $sale = DB::transaction(function () use ($request) {
             $sale = Sale::query()->create([
-                'vendor_id' => $request->integer('vendor_id'),
+                'vendor_id' => $request->input('vendor_id', $this->fallbackVendorId()),
+                'customer_name' => $request->string('customer_name'),
+                'customer_phone' => $request->input('customer_phone'),
                 'sale_number' => sprintf('SAL-%s', now()->format('YmdHisv')),
                 'total_amount' => 0,
                 'paid_amount' => 0,
                 'payment_status' => 'unpaid',
+                'notes' => $request->input('notes'),
                 'sale_date' => $request->input('sale_date', now()),
             ]);
 
@@ -61,7 +71,7 @@ class SaleController extends ApiController
 
                 $price = array_key_exists('price_per_unit', $line)
                     ? (float) $line['price_per_unit']
-                    : (float) $inventory->product->price_per_unit;
+                    : (array_key_exists('unit_price', $line) ? (float) $line['unit_price'] : (float) $inventory->product->price_per_unit);
 
                 $lineTotal = $price * (float) $line['quantity'];
                 $total += $lineTotal;
@@ -96,5 +106,15 @@ class SaleController extends ApiController
         });
 
         return $this->success(new SaleResource($sale->load(['vendor', 'items.product'])), 'Sale created successfully.', 201);
+    }
+
+    private function fallbackVendorId(): int
+    {
+        $vendor = Vendor::query()->firstOrCreate(
+            ['name' => 'Walk-in Customer'],
+            ['phone' => null, 'address' => null]
+        );
+
+        return $vendor->id;
     }
 }

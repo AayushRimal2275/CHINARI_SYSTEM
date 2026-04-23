@@ -14,10 +14,13 @@ class Sale extends Model
     protected $fillable = [
         'legacy_id',
         'vendor_id',
+        'customer_name',
+        'customer_phone',
         'sale_number',
         'total_amount',
         'paid_amount',
         'payment_status',
+        'notes',
         'sale_date',
     ];
 

@@ -15,17 +15,18 @@ class ProductController extends ApiController
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Product::query();
+        $query = Product::query()->with('inventory');
 
         if ($request->boolean('with_trashed')) {
             $query->withTrashed();
         }
 
         if ($search = $request->string('search')->toString()) {
-            $query->where(function ($builder) use ($search): void {
-                $builder->where('name', 'like', "%{$search}%")
-                    ->orWhere('unit', 'like', "%{$search}%");
-            });
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        if ($category = $request->string('category')->toString()) {
+            $query->where('category', $category);
         }
 
         $products = $query->latest()->paginate($request->integer('per_page', 15));
@@ -47,9 +48,13 @@ class ProductController extends ApiController
         $product = DB::transaction(function () use ($request) {
             $product = Product::query()->create([
                 'name' => $request->string('name'),
+                'category' => $request->string('category'),
+                'description' => $request->input('description'),
                 'unit' => $request->string('unit'),
-                'price_per_unit' => $request->input('price_per_unit'),
-                'is_active' => $request->boolean('is_active', true),
+                'image' => $request->input('image'),
+                'price_per_unit' => $request->input('price', $request->input('price_per_unit')),
+                'is_active' => $request->boolean('is_active', $request->input('status', 'active') === 'active'),
+                'status' => $request->input('status', 'active'),
             ]);
 
             Inventory::query()->create([
@@ -72,7 +77,16 @@ class ProductController extends ApiController
 
     public function update(UpdateProductRequest $request, Product $product): JsonResponse
     {
-        $product->update($request->safe()->only(['name', 'unit', 'price_per_unit', 'is_active']));
+        $payload = $request->safe()->only(['name', 'category', 'description', 'unit', 'image', 'is_active', 'status']);
+        if ($request->filled('price') || $request->filled('price_per_unit')) {
+            $payload['price_per_unit'] = $request->input('price', $request->input('price_per_unit'));
+        }
+
+        if ($request->filled('status') && ! $request->has('is_active')) {
+            $payload['is_active'] = $request->input('status') === 'active';
+        }
+
+        $product->update($payload);
 
         if ($request->has('reorder_level')) {
             $product->inventory?->update(['reorder_level' => $request->input('reorder_level')]);

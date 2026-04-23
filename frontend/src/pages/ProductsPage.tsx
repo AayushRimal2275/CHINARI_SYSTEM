@@ -11,26 +11,35 @@ type ProductPayload = { items: Product[] }
 
 type ProductForm = {
   name: string
+  category: 'tea' | 'masala'
+  description: string
   unit: string
-  price_per_unit: string
+  price: string
+  status: 'active' | 'inactive'
 }
 
 const defaultForm: ProductForm = {
   name: '',
+  category: 'tea',
+  description: '',
   unit: '',
-  price_per_unit: '',
+  price: '',
+  status: 'active',
 }
 
 export function ProductsPage() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
   const [form, setForm] = useState<ProductForm>(defaultForm)
   const [editingId, setEditingId] = useState<number | null>(null)
 
   const query = useQuery({
-    queryKey: ['products', search],
+    queryKey: ['products', search, category],
     queryFn: async () => {
-      const response = await api.get<ApiEnvelope<ProductPayload>>('/products', { params: { search, per_page: 50 } })
+      const response = await api.get<ApiEnvelope<ProductPayload>>('/products', {
+        params: { search, category: category || undefined, per_page: 100 },
+      })
       return response.data.data.items
     },
   })
@@ -67,40 +76,53 @@ export function ProductsPage() {
   return (
     <div className="space-y-4">
       <Card>
-        <form className="grid gap-3 md:grid-cols-4" onSubmit={handleSubmit}>
-          <Input
-            value={form.name}
-            onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            placeholder="Product name"
-            required
-          />
-          <Input
-            value={form.unit}
-            onChange={(event) => setForm((current) => ({ ...current, unit: event.target.value }))}
-            placeholder="Unit (kg, packet...)"
-            required
-          />
-          <Input
-            value={form.price_per_unit}
-            onChange={(event) => setForm((current) => ({ ...current, price_per_unit: event.target.value }))}
-            placeholder="Price"
-            required
-            type="number"
-          />
+        <form className="grid gap-3 md:grid-cols-3" onSubmit={handleSubmit}>
+          <Input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} placeholder="Product name" required />
+          <select
+            className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2 text-sm"
+            value={form.category}
+            onChange={(event) => setForm((current) => ({ ...current, category: event.target.value as 'tea' | 'masala' }))}
+          >
+            <option value="tea">Tea</option>
+            <option value="masala">Masala</option>
+          </select>
+          <Input value={form.unit} onChange={(event) => setForm((current) => ({ ...current, unit: event.target.value }))} placeholder="Unit (kg, packet...)" required />
+          <Input value={form.price} onChange={(event) => setForm((current) => ({ ...current, price: event.target.value }))} placeholder="Price" required type="number" />
+          <select
+            className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2 text-sm"
+            value={form.status}
+            onChange={(event) => setForm((current) => ({ ...current, status: event.target.value as 'active' | 'inactive' }))}
+          >
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
           <Button type="submit">{editingId ? 'Update Product' : 'Create Product'}</Button>
+          <textarea
+            className="md:col-span-3 rounded-md border border-[#C7E4CE] bg-white px-3 py-2 text-sm"
+            placeholder="Description"
+            rows={2}
+            value={form.description}
+            onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
+          />
         </form>
       </Card>
 
       <Card>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <Input placeholder="Search by name/unit" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <div className="mb-3 grid gap-2 md:grid-cols-2">
+          <Input placeholder="Search by name" value={search} onChange={(event) => setSearch(event.target.value)} />
+          <select className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2 text-sm" value={category} onChange={(event) => setCategory(event.target.value)}>
+            <option value="">All categories</option>
+            <option value="tea">Tea</option>
+            <option value="masala">Masala</option>
+          </select>
         </div>
 
         <div className="overflow-x-auto">
           <table className="min-w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-slate-500">
+              <tr className="bg-[#2D6A4F] text-left text-white">
                 <th className="px-2 py-2">Name</th>
+                <th className="px-2 py-2">Category</th>
                 <th className="px-2 py-2">Unit</th>
                 <th className="px-2 py-2">Price</th>
                 <th className="px-2 py-2">Status</th>
@@ -108,26 +130,28 @@ export function ProductsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((product) => (
-                <tr className="border-b border-slate-100" key={product.id}>
+              {rows.map((product, index) => (
+                <tr className={index % 2 ? 'bg-white' : 'bg-[#F8FAF8]'} key={product.id}>
                   <td className="px-2 py-2">{product.name}</td>
+                  <td className="px-2 py-2 capitalize">{product.category}</td>
                   <td className="px-2 py-2">{product.unit}</td>
-                  <td className="px-2 py-2">Rs {product.price_per_unit}</td>
+                  <td className="px-2 py-2 font-data">Rs {product.price}</td>
                   <td className="px-2 py-2">
-                    <Badge className={product.is_active ? 'bg-green-100 text-green-700' : 'bg-slate-200 text-slate-600'}>
-                      {product.is_active ? 'Active' : 'Inactive'}
-                    </Badge>
+                    <Badge className={product.status === 'active' ? 'bg-[#D8F3DC] text-[#2D6A4F]' : 'bg-[#F7D6D8] text-[#D64045]'}>{product.status}</Badge>
                   </td>
                   <td className="px-2 py-2">
                     <div className="flex gap-2">
                       <Button
-                        className="bg-blue-600 hover:bg-blue-500"
+                        className="bg-[#40916C] hover:bg-[#2D6A4F]"
                         onClick={() => {
                           setEditingId(product.id)
                           setForm({
                             name: product.name,
+                            category: product.category,
+                            description: product.description ?? '',
                             unit: product.unit,
-                            price_per_unit: product.price_per_unit,
+                            price: product.price,
+                            status: product.status,
                           })
                         }}
                         type="button"
@@ -135,7 +159,7 @@ export function ProductsPage() {
                         Edit
                       </Button>
                       <Button
-                        className="bg-red-600 hover:bg-red-500"
+                        className="bg-[#D64045] hover:bg-[#b63035]"
                         onClick={() => {
                           if (window.confirm('Delete this product?')) {
                             deleteMutation.mutate(product.id)

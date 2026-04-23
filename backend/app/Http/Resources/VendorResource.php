@@ -12,8 +12,13 @@ class VendorResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'contact_person' => $this->contact_person,
             'phone' => $this->phone,
+            'email' => $this->email,
             'address' => $this->address,
+            'product_categories_supplied' => $this->product_categories_supplied ?? [],
+            'status' => $this->status,
+            'products' => ProductResource::collection($this->whenLoaded('products')),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

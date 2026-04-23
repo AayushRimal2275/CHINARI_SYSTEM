@@ -13,7 +13,7 @@ export const api = axios.create({
 
 export function setApiToken(nextToken: string | null) {
   if (nextToken) {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`
+    api.defaults.headers.common.Authorization = `Bearer ${nextToken}`
   } else {
     delete api.defaults.headers.common.Authorization
   }

@@ -29,7 +29,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-[#F8FAF8] p-4">
       <Card className="w-full max-w-sm">
         <h1 className="mb-4 text-xl font-semibold">Admin Login</h1>
         <form className="space-y-3" onSubmit={handleSubmit}>
@@ -41,7 +41,7 @@ export function LoginPage() {
             placeholder="Password"
             required
           />
-          {error ? <p className="text-sm text-red-600">{error}</p> : null}
+          {error ? <p className="text-sm text-[#D64045]">{error}</p> : null}
           <Button className="w-full" disabled={loading} type="submit">
             {loading ? 'Signing in...' : 'Sign in'}
           </Button>
