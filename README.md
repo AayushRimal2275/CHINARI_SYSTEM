@@ -1,8 +1,7 @@
 # CHINARI SYSTEM Monorepo
 
-This repository now contains a phased migration setup:
+This repository contains:
 
-- `chinari_system/` → existing Django system (legacy source for data migration)
 - `backend/` → Laravel 11 API (Sanctum auth + module APIs)
 - `frontend/` → React + TypeScript + Vite admin app
 
@@ -63,7 +62,7 @@ Frontend URL: `http://127.0.0.1:5173`
 - Sign in with seeded admin credentials.
 - Use Dashboard + Products pages.
 
-## Migration notes
+## Deployment
 
-- Legacy Django schema source is under `chinari_system/*/models.py`.
-- Planned data migration mapping and execution checklist are in `docs/django-to-laravel-migration.md`.
+- Vercel is configured to build and serve the React frontend from `frontend/`.
+- Laravel backend should be deployed separately (for example on a PHP-compatible host) and exposed to the frontend via `VITE_API_URL`.
