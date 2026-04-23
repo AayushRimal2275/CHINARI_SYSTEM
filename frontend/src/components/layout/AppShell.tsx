@@ -1,15 +1,16 @@
+import { CreditCard, LayoutDashboard, Package, ShoppingCart, Users, Warehouse } from 'lucide-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/useAuth'
 import { cn } from '@/lib/utils'
 
 const navItems = [
-  { label: 'Dashboard', path: '/' },
-  { label: 'Products', path: '/products' },
-  { label: 'Vendors', path: '/vendors' },
-  { label: 'Inventory', path: '/inventory' },
-  { label: 'Sales', path: '/sales' },
-  { label: 'Payments', path: '/payments' },
+  { label: 'Dashboard', path: '/', icon: LayoutDashboard },
+  { label: 'Products', path: '/products', icon: Package },
+  { label: 'Vendors', path: '/vendors', icon: Users },
+  { label: 'Inventory', path: '/inventory', icon: Warehouse },
+  { label: 'Sales', path: '/sales', icon: ShoppingCart },
+  { label: 'Payments', path: '/payments', icon: CreditCard },
 ]
 
 export function AppShell() {
@@ -32,7 +33,10 @@ export function AppShell() {
                   location.pathname === item.path && 'bg-[#D8F3DC] text-[#1B2E22] hover:bg-[#D8F3DC]',
                 )}
               >
-                {item.label}
+                <span className="inline-flex items-center gap-2">
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </span>
               </Link>
             ))}
           </nav>

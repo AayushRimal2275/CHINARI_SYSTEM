@@ -1,3 +1,4 @@
+import { Toaster } from 'react-hot-toast'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuth } from '@/features/auth/useAuth'
@@ -34,9 +35,12 @@ export default function App() {
   const { token } = useAuth()
 
   return (
-    <Routes>
-      <Route element={token ? <Navigate replace to="/" /> : <LoginPage />} path="/login" />
-      <Route element={<ProtectedRoutes />} path="*" />
-    </Routes>
+    <>
+      <Toaster position="top-right" toastOptions={{ duration: 3500 }} />
+      <Routes>
+        <Route element={token ? <Navigate replace to="/" /> : <LoginPage />} path="/login" />
+        <Route element={<ProtectedRoutes />} path="*" />
+      </Routes>
+    </>
   )
 }

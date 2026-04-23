@@ -1,8 +1,14 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { type ColumnDef } from '@tanstack/react-table'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState } from 'react'
+import { useFieldArray, useForm } from 'react-hook-form'
+import toast from 'react-hot-toast'
+import { z } from 'zod'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { DataTable } from '@/components/ui/data-table'
 import { Input } from '@/components/ui/input'
 import { api } from '@/lib/api'
 import { type ApiEnvelope, type Product, type Sale } from '@/types/api'
@@ -10,14 +16,26 @@ import { type ApiEnvelope, type Product, type Sale } from '@/types/api'
 type SalesPayload = { items: Sale[] }
 type ProductsPayload = { items: Product[] }
 
-type SaleLine = { product_id: string; quantity: string; unit_price: string }
-type SaleForm = {
-  customer_name: string
-  customer_phone: string
-  sale_date: string
-  notes: string
-  items: SaleLine[]
-}
+const numericString = z
+  .string()
+  .min(1, 'Required')
+  .refine((value) => !Number.isNaN(Number(value)) && Number(value) >= 0, 'Enter a valid number')
+
+const saleItemSchema = z.object({
+  product_id: z.string().min(1, 'Select a product'),
+  quantity: numericString,
+  unit_price: numericString,
+})
+
+const saleSchema = z.object({
+  customer_name: z.string().min(1, 'Customer name is required'),
+  customer_phone: z.string().optional(),
+  sale_date: z.string().optional(),
+  notes: z.string().optional(),
+  items: z.array(saleItemSchema).min(1, 'Add at least one item'),
+})
+
+type SaleForm = z.infer<typeof saleSchema>
 
 const defaultForm: SaleForm = {
   customer_name: '',
@@ -31,7 +49,18 @@ export function SalesPage() {
   const queryClient = useQueryClient()
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [form, setForm] = useState<SaleForm>(defaultForm)
+  const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null)
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<SaleForm>({
+    resolver: zodResolver(saleSchema),
+    defaultValues: defaultForm,
+  })
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' })
 
   const salesQuery = useQuery({
     queryKey: ['sales', fromDate, toDate],
@@ -51,14 +80,23 @@ export function SalesPage() {
     },
   })
 
+  const saleDetailQuery = useQuery({
+    queryKey: ['sale', selectedSaleId],
+    queryFn: async () => {
+      const response = await api.get<ApiEnvelope<Sale>>(`/sales/${selectedSaleId}`)
+      return response.data.data
+    },
+    enabled: selectedSaleId !== null,
+  })
+
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (values: SaleForm) => {
       await api.post('/sales', {
-        customer_name: form.customer_name,
-        customer_phone: form.customer_phone,
-        sale_date: form.sale_date || undefined,
-        notes: form.notes,
-        items: form.items.map((item) => ({
+        customer_name: values.customer_name,
+        customer_phone: values.customer_phone,
+        sale_date: values.sale_date || undefined,
+        notes: values.notes,
+        items: values.items.map((item) => ({
           product_id: Number(item.product_id),
           quantity: Number(item.quantity),
           unit_price: Number(item.unit_price),
@@ -66,84 +104,118 @@ export function SalesPage() {
       })
     },
     onSuccess: async () => {
-      setForm(defaultForm)
+      reset(defaultForm)
       await queryClient.invalidateQueries({ queryKey: ['sales'] })
       await queryClient.invalidateQueries({ queryKey: ['inventory'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      toast.success('Sale created.')
     },
+    onError: () => toast.error('Unable to create sale.'),
   })
 
   const totals = useMemo(() => (salesQuery.data ?? []).reduce((sum, sale) => sum + Number(sale.total_amount), 0), [salesQuery.data])
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    mutation.mutate()
-  }
+  const columns = useMemo<ColumnDef<Sale>[]>(
+    () => [
+      {
+        header: 'Sale #',
+        accessorKey: 'sale_number',
+      },
+      {
+        header: 'Customer',
+        accessorKey: 'customer_name',
+      },
+      {
+        header: 'Date',
+        accessorKey: 'sale_date',
+        cell: (info) => new Date(info.getValue<string>()).toLocaleDateString(),
+      },
+      {
+        header: 'Amount',
+        accessorKey: 'total_amount',
+        cell: (info) => <span className="font-data">Rs {info.getValue<string>()}</span>,
+      },
+      {
+        header: 'Status',
+        accessorKey: 'payment_status',
+        cell: (info) => {
+          const status = info.getValue<'paid' | 'partial' | 'unpaid'>()
+          return (
+            <Badge
+              className={
+                status === 'paid' ? 'bg-[#D8F3DC] text-[#2D6A4F]' : status === 'partial' ? 'bg-[#FCECC6] text-[#E9A825]' : 'bg-[#F7D6D8] text-[#D64045]'
+              }
+            >
+              {status}
+            </Badge>
+          )
+        },
+      },
+      {
+        header: 'Actions',
+        id: 'actions',
+        cell: ({ row }) => (
+          <Button className="bg-[#40916C] hover:bg-[#2D6A4F]" onClick={() => setSelectedSaleId(row.original.id)} type="button">
+            View
+          </Button>
+        ),
+      },
+    ],
+    [],
+  )
+
+  const onSubmit = handleSubmit((values) => mutation.mutate(values))
 
   return (
     <div className="space-y-4">
       <Card>
-        <form className="grid gap-3 md:grid-cols-4" onSubmit={handleSubmit}>
-          <Input value={form.customer_name} onChange={(event) => setForm((current) => ({ ...current, customer_name: event.target.value }))} placeholder="Customer name" required />
-          <Input value={form.customer_phone} onChange={(event) => setForm((current) => ({ ...current, customer_phone: event.target.value }))} placeholder="Customer phone" />
-          <Input value={form.sale_date} onChange={(event) => setForm((current) => ({ ...current, sale_date: event.target.value }))} type="date" />
-          <Button type="submit">Create Sale</Button>
-          <Input className="md:col-span-4" value={form.notes} onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))} placeholder="Notes" />
+        <form className="grid gap-3 md:grid-cols-4" onSubmit={onSubmit}>
+          <div>
+            <Input placeholder="Customer name" {...register('customer_name')} />
+            {errors.customer_name ? <p className="mt-1 text-xs text-[#D64045]">{errors.customer_name.message}</p> : null}
+          </div>
+          <Input placeholder="Customer phone" {...register('customer_phone')} />
+          <Input type="date" {...register('sale_date')} />
+          <Button disabled={isSubmitting} type="submit">
+            Create Sale
+          </Button>
+          <Input className="md:col-span-4" placeholder="Notes" {...register('notes')} />
 
-          {form.items.map((item, index) => (
-            <div className="grid gap-2 md:col-span-4 md:grid-cols-4" key={index}>
-              <select
-                className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2 text-sm"
-                required
-                value={item.product_id}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    items: current.items.map((line, lineIndex) => (lineIndex === index ? { ...line, product_id: event.target.value } : line)),
-                  }))
-                }
-              >
-                <option value="">Select product</option>
-                {(productsQuery.data ?? []).map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-              <Input
-                required
-                type="number"
-                value={item.quantity}
-                placeholder="Quantity"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    items: current.items.map((line, lineIndex) => (lineIndex === index ? { ...line, quantity: event.target.value } : line)),
-                  }))
-                }
-              />
-              <Input
-                required
-                type="number"
-                value={item.unit_price}
-                placeholder="Unit price"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    items: current.items.map((line, lineIndex) => (lineIndex === index ? { ...line, unit_price: event.target.value } : line)),
-                  }))
-                }
-              />
+          {fields.map((field, index) => (
+            <div className="grid gap-2 md:col-span-4 md:grid-cols-5" key={field.id}>
+              <div>
+                <select className="w-full rounded-md border border-[#C7E4CE] bg-white px-3 py-2 text-sm" {...register(`items.${index}.product_id`)}>
+                  <option value="">Select product</option>
+                  {(productsQuery.data ?? []).map((product) => (
+                    <option key={product.id} value={product.id}>
+                      {product.name}
+                    </option>
+                  ))}
+                </select>
+                {errors.items?.[index]?.product_id ? <p className="mt-1 text-xs text-[#D64045]">{errors.items[index]?.product_id?.message}</p> : null}
+              </div>
+              <div>
+                <Input type="number" placeholder="Quantity" {...register(`items.${index}.quantity`)} />
+                {errors.items?.[index]?.quantity ? <p className="mt-1 text-xs text-[#D64045]">{errors.items[index]?.quantity?.message}</p> : null}
+              </div>
+              <div>
+                <Input type="number" placeholder="Unit price" {...register(`items.${index}.unit_price`)} />
+                {errors.items?.[index]?.unit_price ? <p className="mt-1 text-xs text-[#D64045]">{errors.items[index]?.unit_price?.message}</p> : null}
+              </div>
               <Button
                 className="bg-[#40916C] hover:bg-[#2D6A4F]"
-                onClick={() =>
-                  setForm((current) => ({
-                    ...current,
-                    items: [...current.items, { product_id: '', quantity: '', unit_price: '' }],
-                  }))
-                }
+                onClick={() => append({ product_id: '', quantity: '', unit_price: '' })}
                 type="button"
               >
                 Add Item
+              </Button>
+              <Button
+                className="border border-[#D64045] bg-white text-[#D64045] hover:bg-[#F7D6D8]"
+                disabled={fields.length === 1}
+                onClick={() => remove(index)}
+                type="button"
+              >
+                Remove
               </Button>
             </div>
           ))}
@@ -158,43 +230,78 @@ export function SalesPage() {
             Revenue in list: <span className="font-data">Rs {totals.toFixed(2)}</span>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-[#2D6A4F] text-left text-white">
-                <th className="px-2 py-2">Sale #</th>
-                <th className="px-2 py-2">Customer</th>
-                <th className="px-2 py-2">Date</th>
-                <th className="px-2 py-2">Amount</th>
-                <th className="px-2 py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(salesQuery.data ?? []).map((sale, index) => (
-                <tr className={index % 2 ? 'bg-white' : 'bg-[#F8FAF8]'} key={sale.id}>
-                  <td className="px-2 py-2">{sale.sale_number}</td>
-                  <td className="px-2 py-2">{sale.customer_name}</td>
-                  <td className="px-2 py-2">{new Date(sale.sale_date).toLocaleDateString()}</td>
-                  <td className="px-2 py-2 font-data">Rs {sale.total_amount}</td>
-                  <td className="px-2 py-2">
-                    <Badge
-                      className={
-                        sale.payment_status === 'paid'
-                          ? 'bg-[#D8F3DC] text-[#2D6A4F]'
-                          : sale.payment_status === 'partial'
-                            ? 'bg-[#FCECC6] text-[#E9A825]'
-                            : 'bg-[#F7D6D8] text-[#D64045]'
-                      }
-                    >
-                      {sale.payment_status}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <DataTable
+          columns={columns}
+          data={salesQuery.data ?? []}
+          emptyMessage="No sales found."
+          getRowClassName={(_, index) => (index % 2 ? 'bg-white' : 'bg-[#F8FAF8]')}
+        />
       </Card>
+
+      {selectedSaleId ? (
+        <Card>
+          <div className="mb-4 flex items-center justify-between">
+            <div>
+              <h3 className="text-lg">Sale Details</h3>
+              <p className="text-sm text-[#4A6358]">Sale #{saleDetailQuery.data?.sale_number ?? selectedSaleId}</p>
+            </div>
+            <Button
+              className="border border-[#40916C] bg-white text-[#40916C] hover:bg-[#D8F3DC]"
+              onClick={() => setSelectedSaleId(null)}
+              type="button"
+            >
+              Close
+            </Button>
+          </div>
+          <div className="mb-3 grid gap-2 md:grid-cols-3 text-sm">
+            <div className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2">
+              <p className="text-[#4A6358]">Customer</p>
+              <p className="font-medium">{saleDetailQuery.data?.customer_name ?? '-'}</p>
+            </div>
+            <div className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2">
+              <p className="text-[#4A6358]">Total</p>
+              <p className="font-data">Rs {saleDetailQuery.data?.total_amount ?? '0.00'}</p>
+            </div>
+            <div className="rounded-md border border-[#C7E4CE] bg-white px-3 py-2">
+              <p className="text-[#4A6358]">Status</p>
+              <Badge
+                className={
+                  saleDetailQuery.data?.payment_status === 'paid'
+                    ? 'bg-[#D8F3DC] text-[#2D6A4F]'
+                    : saleDetailQuery.data?.payment_status === 'partial'
+                      ? 'bg-[#FCECC6] text-[#E9A825]'
+                      : 'bg-[#F7D6D8] text-[#D64045]'
+                }
+              >
+                {saleDetailQuery.data?.payment_status ?? 'unpaid'}
+              </Badge>
+            </div>
+          </div>
+          <DataTable
+            columns={[
+              { header: 'Product', accessorKey: 'product_name' },
+              {
+                header: 'Quantity',
+                accessorKey: 'quantity',
+                cell: (info) => <span className="font-data">{info.getValue<string>()}</span>,
+              },
+              {
+                header: 'Unit Price',
+                accessorKey: 'unit_price',
+                cell: (info) => <span className="font-data">Rs {info.getValue<string>()}</span>,
+              },
+              {
+                header: 'Subtotal',
+                accessorKey: 'subtotal',
+                cell: (info) => <span className="font-data">Rs {info.getValue<string>()}</span>,
+              },
+            ]}
+            data={saleDetailQuery.data?.items ?? []}
+            emptyMessage="No items recorded."
+            getRowClassName={(_, index) => (index % 2 ? 'bg-white' : 'bg-[#F8FAF8]')}
+          />
+        </Card>
+      ) : null}
     </div>
   )
 }

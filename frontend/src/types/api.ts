@@ -34,6 +34,7 @@ export type Vendor = {
   address: string | null
   product_categories_supplied: string[]
   status: 'active' | 'inactive'
+  products?: Product[]
 }
 
 export type Inventory = {
@@ -67,6 +68,7 @@ export type SaleItem = {
 export type Sale = {
   id: number
   sale_number: string
+  vendor?: Vendor
   customer_name: string
   customer_phone: string | null
   sale_date: string
@@ -74,6 +76,7 @@ export type Sale = {
   payment_status: 'unpaid' | 'partial' | 'paid'
   notes: string | null
   items?: SaleItem[]
+  payments?: Payment[]
 }
 
 export type Payment = {
@@ -84,4 +87,5 @@ export type Payment = {
   payment_date: string
   notes: string | null
   sale?: Sale
+  vendor?: Vendor
 }
