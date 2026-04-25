@@ -13,6 +13,8 @@ class SaleResource extends JsonResource
             'id' => $this->id,
             'sale_number' => $this->sale_number,
             'vendor' => new VendorResource($this->whenLoaded('vendor')),
+            'customer_name' => $this->customer_name,
+            'customer_phone' => $this->customer_phone,
             'items' => $this->whenLoaded('items', function () {
                 return $this->items->map(function ($item) {
                     return [
@@ -20,7 +22,9 @@ class SaleResource extends JsonResource
                         'product_id' => $item->product_id,
                         'product_name' => $item->product?->name,
                         'quantity' => number_format((float) $item->quantity, 2, '.', ''),
+                        'unit_price' => number_format((float) $item->price_per_unit, 2, '.', ''),
                         'price_per_unit' => number_format((float) $item->price_per_unit, 2, '.', ''),
+                        'subtotal' => number_format((float) $item->line_total, 2, '.', ''),
                         'line_total' => number_format((float) $item->line_total, 2, '.', ''),
                     ];
                 });
@@ -28,6 +32,7 @@ class SaleResource extends JsonResource
             'total_amount' => number_format((float) $this->total_amount, 2, '.', ''),
             'paid_amount' => number_format((float) $this->paid_amount, 2, '.', ''),
             'payment_status' => $this->payment_status,
+            'notes' => $this->notes,
             'sale_date' => $this->sale_date,
             'created_at' => $this->created_at,
         ];

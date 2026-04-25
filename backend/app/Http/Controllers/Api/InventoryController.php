@@ -21,6 +21,10 @@ class InventoryController extends ApiController
             $query->whereColumn('quantity', '<=', 'reorder_level');
         }
 
+        if ($request->filled('product_id')) {
+            $query->where('product_id', $request->integer('product_id'));
+        }
+
         $inventory = $query->latest()->paginate($request->integer('per_page', 15));
 
         return $this->success([
@@ -41,7 +45,7 @@ class InventoryController extends ApiController
 
         return $this->success([
             'inventory' => new InventoryResource($inventory),
-            'movements' => StockMovementResource::collection($inventory->movements()->latest()->limit(30)->get()),
+            'movements' => StockMovementResource::collection($inventory->movements()->with('inventory')->latest()->limit(30)->get()),
         ]);
     }
 
@@ -66,7 +70,14 @@ class InventoryController extends ApiController
                 ['quantity' => 0, 'reorder_level' => 10]
             );
 
-            $nextQuantity = (float) $inventory->quantity + (float) $request->input('quantity');
+            $movementType = $request->input('movement_type', $request->input('type'));
+            $amount = (float) $request->input('quantity');
+            $signedQuantity = $movementType === 'out' ? -1 * $amount : $amount;
+            if ($movementType === 'adjustment' && $request->filled('type')) {
+                $signedQuantity = (float) $request->input('quantity');
+            }
+
+            $nextQuantity = (float) $inventory->quantity + $signedQuantity;
             if ($nextQuantity < 0) {
                 abort(422, 'Cannot reduce stock below zero.');
             }
@@ -78,9 +89,10 @@ class InventoryController extends ApiController
 
             StockMovement::query()->create([
                 'inventory_id' => $inventory->id,
-                'type' => $request->string('type'),
-                'quantity' => abs((float) $request->input('quantity')),
-                'notes' => $request->input('notes'),
+                'type' => $movementType,
+                'quantity' => abs($signedQuantity),
+                'notes' => $request->input('note', $request->input('notes')),
+                'movement_date' => $request->input('date', now()),
                 'created_by' => $request->user()?->id,
             ]);
 

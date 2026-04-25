@@ -15,9 +15,12 @@ class AdjustInventoryRequest extends FormRequest
     {
         return [
             'product_id' => ['required', 'exists:products,id'],
-            'quantity' => ['required', 'numeric', 'not_in:0'],
-            'type' => ['required', 'in:in,out,adjustment'],
+            'quantity' => ['required', 'numeric', 'gt:0'],
+            'type' => ['nullable', 'in:in,out,adjustment', 'required_without:movement_type'],
+            'movement_type' => ['nullable', 'in:in,out,adjustment', 'required_without:type'],
             'notes' => ['nullable', 'string'],
+            'note' => ['nullable', 'string'],
+            'date' => ['nullable', 'date'],
         ];
     }
 }

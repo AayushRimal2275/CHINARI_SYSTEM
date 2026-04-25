@@ -15,9 +15,14 @@ class StoreProductRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100'],
+            'category' => ['required', 'in:tea,masala'],
+            'description' => ['nullable', 'string'],
             'unit' => ['required', 'string', 'max:20'],
-            'price_per_unit' => ['required', 'numeric', 'min:0'],
+            'image' => ['nullable', 'string', 'max:255'],
+            'price_per_unit' => ['nullable', 'numeric', 'min:0', 'required_without:price'],
+            'price' => ['nullable', 'numeric', 'min:0', 'required_without:price_per_unit'],
             'is_active' => ['sometimes', 'boolean'],
+            'status' => ['sometimes', 'in:active,inactive'],
             'reorder_level' => ['sometimes', 'numeric', 'min:0'],
             'opening_stock' => ['sometimes', 'numeric', 'min:0'],
         ];

@@ -12,8 +12,11 @@ class PaymentResource extends JsonResource
         return [
             'id' => $this->id,
             'vendor' => new VendorResource($this->whenLoaded('vendor')),
+            'sale' => new SaleResource($this->whenLoaded('sale')),
             'sale_id' => $this->sale_id,
+            'amount_paid' => number_format((float) $this->amount, 2, '.', ''),
             'amount' => number_format((float) $this->amount, 2, '.', ''),
+            'payment_method' => $this->payment_method,
             'payment_date' => $this->payment_date,
             'notes' => $this->notes,
             'created_at' => $this->created_at,

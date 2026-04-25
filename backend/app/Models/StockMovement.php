@@ -17,11 +17,13 @@ class StockMovement extends Model
         'reference_type',
         'reference_id',
         'notes',
+        'movement_date',
         'created_by',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
+        'movement_date' => 'datetime',
     ];
 
     public function inventory(): BelongsTo
